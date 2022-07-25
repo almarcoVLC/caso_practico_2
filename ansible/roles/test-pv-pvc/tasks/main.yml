@@ -1,0 +1,19 @@
+---
+
+- name: 'Get pv'
+  shell: "kubectl get pv"
+  become: false
+  register: kubctl_out
+
+- name: 'Test Get pv'
+  debug:
+    msg: "{{ kubctl_out.stdout.split('\n') }}"
+
+- name: 'Get pvc'
+  shell: "kubectl get pvc -n {{namespace}}"
+  become: false
+  register: kubctl_out
+
+- name: 'Test Get pvc'
+  debug:
+    msg: "{{ kubctl_out.stdout.split('\n') }}"

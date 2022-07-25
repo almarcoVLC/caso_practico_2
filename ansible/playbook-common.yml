@@ -1,0 +1,11 @@
+---
+
+- name: 'Configuración común'
+  hosts: all
+  remote_user: "{{ user }}"
+  become: true
+  gather_facts: true
+  tasks:
+    - name: 'set-up all host'
+      include_role:
+        name: common

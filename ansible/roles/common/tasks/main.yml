@@ -1,0 +1,48 @@
+---
+
+- name: 'Set hostname'
+  hostname:
+    name: "{{ host_name }}"
+
+- name: 'Overwrite /etc/hosts'
+  template:
+    src: templates/hosts.j2
+    dest: /etc/hosts
+    owner: root
+    mode: '0644'
+
+- name: 'Set timezone to Europe/Madrid'
+  timezone:
+    name: "{{ time_zone }}"
+
+- name: 'Update packages'
+  yum:
+    name: "*"
+    state: latest
+
+- name: 'Install common rpms'
+  yum:
+    name: "{{ rpms }}"
+    state: latest
+
+- name: 'Enable services'
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop: "{{ services }}"
+
+- name: 'Disable SELinux'
+  ansible.posix.selinux:
+    state: disabled
+
+- name: 'Reboot!!!'
+  reboot:
+    reboot_timeout: 300
+
+- name: 'Wait for the reboot'
+  wait_for_connection:
+    connect_timeout: 10
+    sleep: 5
+    delay: 5
+    timeout: 300

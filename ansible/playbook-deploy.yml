@@ -1,0 +1,47 @@
+---
+
+- name: 'Deploy and test'
+  hosts: master
+  remote_user: "{{ user }}"
+  gather_facts: false
+  tasks:
+    - name: 'install kubernetes para python' 
+      pip:
+        name:
+          - kubernetes
+      become: true
+
+    - name: 'Create namespace {{namespace}}'
+      k8s:
+        name: "{{namespace}}"
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: 'Deploy pv and pvc'
+      include_role:
+        name: deploy-pv-pvc
+
+    - name: 'Esperando que se inicialicen pv y pvc'
+      pause:
+        minutes: 2
+    
+    - name: 'test'
+      include_role:
+        name: test-pv-pvc
+
+    - name: 'Deploy app'
+      include_role:
+        name: deploy-ngnix
+
+    - name: 'Esperando que se inicialicen los pods'
+      pause:
+        minutes: 1
+
+    - name: 'test'
+      include_role:
+        name: test-pods
+    
+    - name: 'test'
+      include_role:
+        name: test-services

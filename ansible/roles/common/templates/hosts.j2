@@ -1,0 +1,14 @@
+127.0.0.1   localhost
+::1         localhost
+
+{% for master in groups['master'] %}
+  {{ hostvars[master].internal_ip }} {{ hostvars[master].host_name }}
+{% endfor %}
+
+{% for worker in groups['workers'] %}
+  {{ hostvars[worker].internal_ip }} {{ hostvars[worker].host_name }}
+{% endfor %}
+
+{% for nfs in groups['nfs'] %}
+  {{ hostvars[nfs].internal_ip }} {{ hostvars[nfs].host_name }}
+{% endfor %}

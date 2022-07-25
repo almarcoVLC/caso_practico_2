@@ -1,0 +1,36 @@
+---
+
+- name: 'Configurar nodos de kubernetes'
+  hosts:
+    - 'master'
+    - 'workers'
+  remote_user: "{{ user }}"
+  become: true
+  gather_facts: true
+  tasks:
+    - name: 'set-up kubernete nodes parte común'
+      include_role:
+        name: kubernete-common
+    
+    - name: 'set-up master'
+      when: inventory_hostname in groups['master']
+      include_role:
+        name: kubernete-master
+
+    - name: 'Esperando que se inicialice nodo master'
+      pause:
+        minutes: 2
+
+    - name: 'set-up workers'
+      when: inventory_hostname in groups['workers']
+      include_role:
+        name: kubernete-worker
+
+    - name: 'Esperando que los workers hagan join en el kube'
+      pause:
+        minutes: 2
+    
+    - name: 'test'
+      when: inventory_hostname in groups['master']
+      include_role:
+        name: test-nodes

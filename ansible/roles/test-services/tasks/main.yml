@@ -1,0 +1,10 @@
+---
+
+- name: 'Get services'
+  shell: "kubectl get services -n {{namespace}}"
+  become: false
+  register: kubctl_out
+
+- name: 'Test Get services'
+  debug:
+    msg: "{{ kubctl_out.stdout.split('\n') }}"

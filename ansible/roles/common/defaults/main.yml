@@ -1,0 +1,9 @@
+time_zone: "Europe/Madrid"
+
+rpms:
+  - chrony
+  - firewalld
+
+services:
+  - chronyd
+  - firewalld

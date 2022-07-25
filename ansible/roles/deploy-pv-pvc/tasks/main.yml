@@ -1,0 +1,35 @@
+---
+
+- name: "Cear {{ pv }} con nfs: {{ hostvars[ groups['nfs'][0] ]['internal_ip'] }}"
+  k8s:
+    definition:
+      apiVersion: v1
+      kind: PersistentVolume
+      metadata:
+        name: "{{ pv }}"
+      spec:
+        storageClassName: nfs
+        capacity:
+          storage: 1Gi
+        accessModes:
+          - ReadWriteMany
+        nfs:
+          path: "/"
+          #Recuperamos la ip interna del nfs
+          server: "{{ hostvars[ groups['nfs'][0] ]['internal_ip'] }}"
+
+- name: 'Crear {{ pvc }}'
+  k8s:
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ pvc }}"
+        namespace: "{{ namespace }}"
+      spec:
+        storageClassName: nfs
+        accessModes:
+          - ReadWriteMany
+        resources:
+          requests:
+            storage: 1Gi

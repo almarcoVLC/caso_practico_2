@@ -1,0 +1,95 @@
+---
+
+- name: 'Preparation (1/2)'
+  file:
+    path: "{{ item.file }}"
+    state: absent
+  loop: "{{ yum_repositories }}"
+
+- name: 'Preparation (2/2)'
+  file:
+    path: /etc/yum.repos.d/kubernetes.repo
+    state: absent
+
+#1. Habilitar **transparent masquerading** 
+- name: 'transparent masquerading - br_netfilter           (1/5)'
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: 'transparent masquerading - enable FW masquerading (2/5)'
+  firewalld:
+    state: enabled
+    masquerade: true
+    permanent: true
+    immediate: true
+
+- name: 'transparent masquerading - reload FW service     (3/5)'
+  systemd:
+    name: firewalld
+    state: reloaded
+    enabled: true
+
+- name: 'transparent masquerading - set k8s.conf           (4/5)'
+  template:
+    src: templates/k8s.conf
+    dest: "/etc/sysctl.d/k8s.conf"
+
+- name: 'transparent masquerading - sytemctl --system      (5/5)'
+  shell: "sysctl --system"
+
+# 2. Desactivar la partición de swap:
+- name: Disable SWAP - swapoff -a (1/2)
+  shell: |
+    swapoff -a
+
+- name: Disable SWAP - in fstab   (2/2)
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+# 3. Instalación de CRI-O como runtime en CentOS Stream 8:
+- name: 'CRI-O install - Add yum repositories (1/2)'
+  uri:
+    url: "{{ item.repo }}"
+    dest: "/etc/yum.repos.d/{{ item.file }}"
+  loop: "{{ yum_repositories }}"
+
+- name: 'CRI-O install - install cri-o rpm    (2/2)'
+  yum:
+    name: crio
+
+#4. Habilitar los módulos de kernel necesarios:
+- name: 'enable cri-o kernel modules'
+  template:
+    src: templates/crio.conf
+    dest: "/etc/modules-load.d/crio.conf"
+
+#5. Habilitar e iniciar el servicio de cri-o:
+- name: 'init and enable cri-o'
+  systemd:
+    name: crio
+    state: started
+    enabled: yes
+
+#6. Habilitar el repositorio de Kubernetes:
+- name: 'enable Kubernetes repository'
+  template:
+    src: templates/kubernetes.repo.j2
+    dest: "/etc/yum.repos.d/kubernetes.repo"
+    mode: "u=rw,g=r,o=r"
+
+#7. Instalar kubernetes
+- name: 'Install kubernetes rpms'
+  yum:
+    name: "{{ item }}"
+    disable_excludes: kubernetes
+  loop: "{{ kubernetes_rpms }}"
+
+#8. Habilitar e iniciar el servicio de kubelet:
+- name: 'init and enable kubelet'
+  systemd:
+    name: kubelet
+    state: started
+    enabled: yes

@@ -1,0 +1,10 @@
+---
+
+- name: 'Get nodes'
+  shell: "kubectl get nodes"
+  become: false
+  register: kubctl_out
+
+- name: 'Test Get nodes'
+  debug:
+    msg: "{{ kubctl_out.stdout.split('\n') }}"

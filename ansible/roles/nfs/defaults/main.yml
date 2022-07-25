@@ -1,0 +1,12 @@
+nfs_path: "/mnt/nfs"
+
+rpms:
+  - nfs-utils
+
+services:
+  - nfs-server
+
+services_for_firewall: 
+  - nfs
+  - rpc-bind
+  - mountd

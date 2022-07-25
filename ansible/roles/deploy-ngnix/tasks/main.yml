@@ -1,0 +1,42 @@
+---
+
+- name: 'Deploy ngnix con pv'
+  k8s:
+    definition:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: ngnix-pod
+        namespace: "{{namespace}}"
+      spec:
+        #Volumen asociado al pvc
+        volumes:
+          - name: ngnix-storage
+            persistentVolumeClaim:
+              claimName: "{{ pvc }}"
+        containers:
+          - name: ngnix-pod-container
+            image: nginx
+            ports:
+              - containerPort: 80
+                name: "http-server"
+            #Montar volumen en el pod
+            volumeMounts:
+              - mountPath: "/usr/share/nginx/html"
+                name: ngnix-storage
+
+- name: 'Crear Service para ngnix'
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ngnix-pod-service
+        namespace: "{{namespace}}"
+      spec:
+        selector:
+          app: ngnix-pod-container
+        ports:
+        - protocol: TCP
+          port: 80

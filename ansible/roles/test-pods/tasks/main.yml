@@ -1,0 +1,10 @@
+---
+
+- name: 'Get pods'
+  shell: "kubectl get pods -n {{namespace}}"
+  become: false
+  register: kubctl_out
+
+- name: 'Test Get pods'
+  debug:
+    msg: "{{ kubctl_out.stdout.split('\n') }}"

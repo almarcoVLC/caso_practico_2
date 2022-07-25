@@ -1,0 +1,24 @@
+---
+
+firewall_ingres_ports:
+  - '6443'
+  - '2379-2380'
+  - '10250'
+  - '10251'
+  - '10252'
+  - '10255'
+
+yum_repositories:
+  - {'name':'kubic-libcontainer',
+    'description':'Kubib libs',
+    'file':'devel:kubic:libcontainers:stable.repo',
+    'repo': 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/CentOS_8_Stream/devel:kubic:libcontainers:stable.repo'}
+  - {'name':'cri-o',
+    'description':'cri-o container',
+    'file':'devel:kubic:libcontainers:stable:cri-o:1.24.repo',
+    'repo': 'https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:1.24/CentOS_8_Stream/devel:kubic:libcontainers:stable:cri-o:1.24.repo'}
+
+kubernetes_rpms:
+  - kubelet
+  - kubeadm
+  - kubectl

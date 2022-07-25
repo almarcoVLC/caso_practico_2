@@ -1,0 +1,26 @@
+---
+
+- name: 'Enable kubernetes port in firewall'
+  firewalld:
+    port: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewall_ingres_ports }}"
+
+- name: 'reload FW service'
+  systemd:
+    name: firewalld
+    state: reloaded
+    enabled: true
+
+#Recuperamos el comando de join de los facts de master.
+#Se asume que el grupo master tiene al menos una posicion.
+- name: 'Join'
+  shell: "{{ hostvars[ groups['master'][0] ]['join_command'] }}"
+  register: join_out
+
+#Comprobamos que el join ha sido satisfactorio
+- name: 'Test join command'
+  debug:
+    msg: "{{ join_out.stdout.split('\n') }}"

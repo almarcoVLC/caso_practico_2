@@ -1,0 +1,12 @@
+---
+
+- name: 'Configuración del nfs'
+  hosts: nfs
+  remote_user: "{{ user }}"
+  become: true
+  gather_facts: true
+  tasks:
+    - name: 'set-up nfs'
+      include_role:
+        name: nfs
+        

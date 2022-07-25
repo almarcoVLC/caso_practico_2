@@ -1,0 +1,95 @@
+---
+
+- name: 'Habilitar kubernetes port en el firewall'
+  firewalld:
+    port: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewall_ingres_ports }}"
+
+- name: 'Permitir workers connections en el firewall'
+  firewalld:
+    rich_rule: "rule family=ipv4 source address={{ hostvars[item]['internal_ip'] }}/32 port port=6443 protocol=tcp accept"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled
+  loop: "{{ groups['workers'] }}"
+
+- name: 'reload FW service'
+  systemd:
+    name: firewalld
+    state: reloaded
+    enabled: true
+
+- name: 'Config kubeadm'
+  shell: "kubeadm config images pull"
+
+- name: 'Init kubeadm'
+  shell: "kubeadm init --pod-network-cidr={{ pods_cdir }}"
+  run_once: true
+  register: kubeadm_out
+
+- name: 'output kubeadm'
+  debug:
+    msg: "{{ kubeadm_out.stdout.split('\n') }}"
+  
+- name: 'Export KUBECONFIG'
+  shell: "export KUBECONFIG=/etc/kubernetes/admin.conf"
+
+- name: 'Create a directory .kube'
+  file:
+    path: "/home/{{ user }}/.kube"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: 'u+rw,g+w,'
+
+- name: 'Copy admin.conf'
+  copy:
+    src: "/etc/kubernetes/admin.conf"
+    dest: "/home/{{ user }}/.kube/config"
+    remote_src: yes
+    owner: "root"
+    group: "root"
+    mode: 'u+rw,g+w,'
+
+#Aplicamos la definción de las políticas de red en el nodo master:
+- name: 'Network policies'
+  shell: "kubectl apply -f https://docs.projectcalico.org/manifests/canal.yaml"
+  become: false
+  run_once: true
+
+- name: 'Reboot!!!'
+  reboot:
+    reboot_timeout: 300
+
+- name: 'Wait for the reboot'
+  wait_for_connection:
+    connect_timeout: 10
+    sleep: 5
+    delay: 5
+    timeout: 300
+
+#Instalación del Ingress Controller (HAProxy)
+- name: 'Install Ingress Controller'
+  shell: "kubectl apply -f https://raw.githubusercontent.com/haproxytech/kubernetes-ingress/master/deploy/haproxy-ingress.yaml"
+  become: false
+  run_once: true
+
+#Obtener el comando join para los workers
+#1. Ejecutamos Kubeadm con los modificadores adecuados.
+#   Esto nos dará en la salida de terminal comando
+- name: 'Get join command'
+  shell: "kubeadm token create --print-join-command"
+  become: false
+  register: join_command_raw
+
+#2. Con la salida de terminal registrada como "join_command_raw"
+#   podemos usar set_fact para añadir el comando como "fact"
+#   al host master. Es evidente que solo se espera que este 
+#   roles se ejecute en master, donde esta instalado kubeadm. 
+- name: 'set join-command como fact'
+  set_fact:
+    join_command: "{{ join_command_raw.stdout_lines[0] }}"

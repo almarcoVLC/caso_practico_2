@@ -1,0 +1,9 @@
+---
+
+firewall_ingres_ports:
+  - '8285/udp'
+  - '8472/udp'
+  - '10250/tcp'
+  - '30000-32767/tcp'
+  - '80/tcp'
+  - '443/tcp'

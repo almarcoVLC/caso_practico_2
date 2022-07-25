@@ -1,0 +1,60 @@
+---
+
+- name: Install rpms for nfs
+  yum:
+    name: "{{ rpms }}"
+    state: latest
+
+- name: Create mnt directory, if it does not exist
+  file:
+    path: "{{ nfs_path }}"
+    state: directory
+    mode: '0777'
+
+- name: Change rigths and owner
+  file:
+    path: "{{ nfs_path }}"
+    state: directory
+    owner: "nobody"
+    mode: '0777'
+
+- name: 'Overwrite /etc/exports'
+  template:
+    src: templates/exports.j2
+    dest: /etc/exports
+    owner: root
+    mode: '0644'
+
+- name: 'Restart y habilitar servicio nfs'
+  systemd:
+    name: "{{ item }}"
+    daemon_reload: yes
+    state: restarted
+    enabled: yes
+  loop: "{{ services }}"
+
+- name: 'Export file system'
+  shell: "exportfs -arv"
+
+- name: 'Test export, exportfs -s'
+  shell: "exportfs -s"
+  register: out
+
+#Comprobamos la salida del comando export -s
+- name: 'Test export, print'
+  debug:
+    msg: "{{ out.stdout.split('\n') }}"
+
+- name: 'firewall rules'
+  firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: "{{ services_for_firewall }}"
+
+- name: 'reload FW service'
+  systemd:
+    name: firewalld
+    state: reloaded
+    enabled: true
