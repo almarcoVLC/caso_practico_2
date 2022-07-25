@@ -71,7 +71,7 @@ resource "azurerm_network_security_group" "nsg_master" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
-  #Maste tiene mas puertos abierto y por lo tanto más reglas
+  #Master tiene más puertos abierto y por lo tanto más reglas
   security_rule {
     name                       = "web"
     priority                   = 1002
